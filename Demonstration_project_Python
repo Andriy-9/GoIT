@@ -29,7 +29,7 @@ cleaned_data_04.dropna(subset=['Applied at'])
 cleaned_data_04['Applied at'] = cleaned_data_04['Applied at'].str.split().str[0]
 cleaned_data_04['Applied at'] = pd.to_datetime(cleaned_data_04['Applied at'], format='%m.%d.%Y')
 
-#Step 06. Create a function to calculate the app rating
+#Step 06. Create a function to calculate the industry rating
 def calculate_rating(row):
     # Initialize rating
     rating = 0
