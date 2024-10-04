@@ -1,0 +1,173 @@
+/*Part #1. Function*/
+create or replace function public.ñyrillic_decoding (url_parametrs varchar)
+returns text
+language plpgsql
+as $function$
+declare function_variable text := url_parametrs;
+begin
+	function_variable := regexp_replace(function_variable, '%D0%B0', 'à', 'gi'); -- à
+    function_variable := regexp_replace(function_variable, '%D0%B1', 'á', 'gi'); -- á
+    function_variable := regexp_replace(function_variable, '%D0%B2', 'â', 'gi'); -- â
+    function_variable := regexp_replace(function_variable, '%D0%B3', 'ã', 'gi'); -- ã
+    function_variable := regexp_replace(function_variable, '%D2%91', '´', 'gi'); -- ´
+    function_variable := regexp_replace(function_variable, '%D0%B4', 'ä', 'gi'); -- ä
+    function_variable := regexp_replace(function_variable, '%D0%B5', 'å', 'gi'); -- å
+    function_variable := regexp_replace(function_variable, '%D0%B6', 'æ', 'gi'); -- æ
+    function_variable := regexp_replace(function_variable, '%D0%B7', 'ç', 'gi'); -- ç
+    function_variable := regexp_replace(function_variable, '%D0%B8', 'è', 'gi'); -- è
+    function_variable := regexp_replace(function_variable, '%D1%96', '³', 'gi'); -- ³
+    function_variable := regexp_replace(function_variable, '%D0%87', '¿', 'gi'); -- ¿
+    function_variable := regexp_replace(function_variable, '%D0%B9', 'é', 'gi'); -- é
+    function_variable := regexp_replace(function_variable, '%D0%BA', 'ê', 'gi'); -- ê
+    function_variable := regexp_replace(function_variable, '%D0%BB', 'ë', 'gi'); -- ë
+    function_variable := regexp_replace(function_variable, '%D0%BC', 'ì', 'gi'); -- ì
+    function_variable := regexp_replace(function_variable, '%D0%BD', 'í', 'gi'); -- í
+    function_variable := regexp_replace(function_variable, '%D0%BE', 'î', 'gi'); -- î
+    function_variable := regexp_replace(function_variable, '%D0%BF', 'ï', 'gi'); -- ï
+    function_variable := regexp_replace(function_variable, '%D1%80', 'ð', 'gi'); -- ð
+    function_variable := regexp_replace(function_variable, '%D1%81', 'ñ', 'gi'); -- ñ
+    function_variable := regexp_replace(function_variable, '%D1%82', 'ò', 'gi'); -- ò
+    function_variable := regexp_replace(function_variable, '%D1%83', 'ó', 'gi'); -- ó
+    function_variable := regexp_replace(function_variable, '%D1%84', 'ô', 'gi'); -- ô
+    function_variable := regexp_replace(function_variable, '%D1%85', 'õ', 'gi'); -- õ
+    function_variable := regexp_replace(function_variable, '%D1%86', 'ö', 'gi'); -- ö
+    function_variable := regexp_replace(function_variable, '%D1%87', '÷', 'gi'); -- ÷
+    function_variable := regexp_replace(function_variable, '%D1%88', 'ø', 'gi'); -- ø
+    function_variable := regexp_replace(function_variable, '%D1%89', 'ù', 'gi'); -- ù
+    function_variable := regexp_replace(function_variable, '%D1%8C', 'ü', 'gi'); -- ü
+    function_variable := regexp_replace(function_variable, '%D1%8D', 'ý', 'gi'); -- ý
+    function_variable := regexp_replace(function_variable, '%D1%8E', 'þ', 'gi'); -- þ
+    function_variable := regexp_replace(function_variable, '%D1%8F', 'ÿ', 'gi'); -- ÿ
+return function_variable;
+end;
+$function$;
+
+/*Part #2. CTE*/
+with pivot_table as (
+	select fabd.ad_date as data_of_ads,
+		fcamp.campaign_name as camp_name,
+		fabd.url_parameters as media_source,
+		fabd.spend as consolidated_spends,
+		fabd.impressions as consolidated_impressions,
+		fabd.reach as consolidated_reachas,
+		fabd.clicks as consolidated_clicks, 
+		fabd.leads as consolidated_leads,
+		fabd.value as consolidated_value
+	from facebook_ads_basic_daily as fabd
+	inner join facebook_campaign as fcamp on fabd.campaign_id = fcamp.campaign_id
+	inner join facebook_adset as fadset on fabd.adset_id = fadset.adset_id
+union
+
+with pivot_table as (
+	select fabd.ad_date as data_of_ads,
+		fcamp.campaign_name as camp_name,
+		fabd.url_parameters as media_source,
+		fabd.spend as consolidated_spends,
+		fabd.impressions as consolidated_impressions,
+		fabd.reach as consolidated_reachas,
+		fabd.clicks as consolidated_clicks, 
+		fabd.leads as consolidated_leads,
+		fabd.value as consolidated_value
+	from facebook_ads_basic_daily as fabd
+	inner join facebook_campaign as fcamp on fabd.campaign_id = fcamp.campaign_id
+	inner join facebook_adset as fadset on fabd.adset_id = fadset.adset_id
+union all
+	select gabd.ad_date,
+		gabd.adset_name,
+		gabd.url_parameters,
+		gabd.spend,
+		gabd.impressions,
+		gabd.reach,
+		gabd.clicks, 
+		gabd.leads,
+		gabd.value
+	from google_ads_basic_daily as gabd),
+	current_metrics as (
+	select to_char (data_of_ads,'MM') as ad_month,
+		ñyrillic_decoding (media_source) as m_source,
+		sum (consolidated_spends) as total_spend,
+		sum (consolidated_impressions) as total_impressions,
+		sum (consolidated_clicks) as total_clicks,
+		sum (consolidated_value) as total_value,
+		-- *** current ctr ***
+		case when sum (consolidated_clicks) is null or sum (consolidated_clicks) = 0
+			then null
+			else round(sum (consolidated_impressions)/sum (consolidated_clicks),2)
+			end as ctr,
+			-- *** current cpc ***
+		case when sum(consolidated_clicks) is null or sum(consolidated_clicks) = 0
+			then null
+			else round(sum(consolidated_spends)/sum(consolidated_clicks),2)
+			end as cpc,
+			-- *** current cpm ***
+		case when sum(consolidated_impressions) is null or sum(consolidated_impressions) = 0
+			then null
+			else round(1000*(sum(consolidated_spends)::numeric/sum(consolidated_impressions)::numeric),2)
+			end as cpm,
+			--*** current romi ***
+		case when sum(consolidated_spends) is null or sum(consolidated_spends) = 0
+			then null
+			else round((sum(consolidated_value)::numeric-sum(consolidated_spends)::numeric)/sum(consolidated_spends)::numeric,2)
+			end as romi
+	from pivot_table
+		group by ad_month, m_source
+		order by ad_month),
+	business_intelligence as (
+	select ad_month,
+		m_source,
+		total_spend,
+		total_impressions,
+		total_clicks,
+		total_value,
+		ctr,
+		cpc,
+		cpm,
+		romi,
+		lag (ctr,1) over (partition by m_source order by ad_month, m_source) as previous_ctr,
+		lag (cpm,1) over (partition by m_source order by ad_month, m_source) as previous_cpm,
+		lag (romi,1) over (partition by m_source order by ad_month, m_source) as previous_romi
+
+/*Part #3. Query*/
+	from current_metrics
+	group by ad_month, m_source, total_spend, total_impressions, total_clicks, total_value, ctr, cpc, cpm, romi
+	order by ad_month, m_source)
+	select ad_month,
+		m_source,
+		total_spend,
+		total_impressions,
+		total_clicks,
+		total_value,
+		ctr,
+		cpc,
+		cpm,
+		romi,
+		-- *** difference_of_ctr ***
+		case when previous_ctr is null or previous_ctr = 0
+			then null
+			when ctr is null
+			then null
+			when (ctr-previous_ctr)>=0 and previous_ctr > 0
+			then '+'||round(100*(ctr-previous_ctr)/previous_ctr, 2)||'%'
+			else round(100*(ctr-previous_ctr)/previous_ctr, 2)||'%'
+			end as difference_of_ctr,
+		-- *** difference_of_cpm ***
+		case when previous_cpm is null or previous_cpm = 0
+			then null
+			when cpm is null
+			then null
+			when (cpm-previous_cpm)>=0 and previous_cpm > 0
+			then '+'||round(100*((cpm-previous_cpm)/previous_cpm), 2)||'%'
+			else round(100*(cpm-previous_cpm)/previous_cpm, 2)||'%'
+			end as difference_of_cpm,
+			-- *** difference_of_romi ***
+		case when previous_romi is null or previous_romi = 0
+			then null
+			when romi is null
+			then null
+			when (romi-previous_romi)>=0 and previous_romi > 0
+			then '+'||round(100*(romi-previous_romi)/previous_romi, 2)||'%'
+			else round(100*(romi-previous_romi)/previous_romi, 2)||'%'
+			end as difference_of_romi
+	from business_intelligence
+		group by ad_month, m_source, total_spend, total_impressions, total_clicks, total_value, ctr, cpc, cpm, romi, difference_of_ctr, difference_of_cpm, difference_of_romi
+		order by ad_month, m_source;
