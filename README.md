@@ -1,5 +1,5 @@
 # GoIT
-Demonstration projects
+Demonstration project in SQL
 1. Decoding the utm_campaign value by creating a temporary function (converting Cyrillic letters to url parameters)
 2. The CTE query combines the data from the tables (facebook_ads_basic_daily, facebook_adset, facebook_campaign, google_ads_basic_daily) into a consolidated table for further calculation of the indicators:
 - ad_date - the date when the ad was shown on Google and Facebook;
