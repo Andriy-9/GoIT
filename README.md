@@ -1,6 +1,6 @@
 # GoIT
 Demonstration project in SQL
-1. Decoding the utm_campaign value by creating a temporary function [(converting Cyrillic letters to url parameters)]https://github.com/Andriy-9/GoIT/blob/0cca9a4a91f9bcab1a44b6332bb8c411074c9c05/Demonstration_project_SQL.txt#L1
+1. Decoding the utm_campaign value by creating a temporary function [(converting Cyrillic letters to url parameters)] https://github.com/Andriy-9/GoIT/blob/0cca9a4a91f9bcab1a44b6332bb8c411074c9c05/Demonstration_project_SQL.txt#L1
 2. The CTE query combines the data from the tables (facebook_ads_basic_daily, facebook_adset, facebook_campaign, google_ads_basic_daily) into a consolidated table for further calculation of the indicators:
 - ad_date - the date when the ad was shown on Google and Facebook;
 - url_parameters - part of the URL from the campaign link that includes UTM parameters;
