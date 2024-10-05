@@ -61,12 +61,12 @@ def calculate_rating(row):
         rating -= 20
     return rating
 
-#Step 06. Calculation of application rating
+#Step 07. Calculation of application rating
 cleaned_data_05 = cleaned_data_04.copy()
 cleaned_data_05['Rating'] = cleaned_data_05.apply(calculate_rating, axis=1)
 del cleaned_data_04
 
-#Step 07. Filter to keep only accepted applications
+#Step 08. Filter to keep only accepted applications
 #07-1. The rating is 0 if there is no 'Amount' value or if the 'External Rating' is 0
 cleaned_data_05['Rating'] = cleaned_data_05.apply(
     lambda row: 0 if (pd.isnull(row['Amount']) or row['External Rating'] == 0) else row['Rating'],
@@ -74,20 +74,20 @@ cleaned_data_05['Rating'] = cleaned_data_05.apply(
 #07-2. The rating is a number from 0 to 100
 cleaned_data_05 = cleaned_data_05[(cleaned_data_05['Rating'] > 0)&(cleaned_data_05['Rating'] <= 100)]
 
-#Step 08. Creating a column of the week
+#Step 09. Creating a column of the week
 cleaned_data_06 = cleaned_data_05.copy()
 cleaned_data_06['Applied at'] = pd.to_datetime(cleaned_data_06['Applied at'])
 cleaned_data_06['Week'] = cleaned_data_06['Applied at'].dt.isocalendar().week
 del cleaned_data_05
 
-#Step 09. Grouping data by the week of application
+#Step 10. Grouping data by the week of application
 cleaned_data_06 = cleaned_data_06[['Week', 'Rating']]
 cleaned_data_07 = cleaned_data_06.copy()
 cleaned_data_07['Week'] = cleaned_data_07['Week'].astype(int)
 cleaned_data_07 = cleaned_data_07.groupby('Week')['Rating'].mean().round(2)
 del cleaned_data_06
 
-#Step 10. Creating chart
+#Step 11. Creating chart
 plt.figure(figsize=(10, 6))
 ax = cleaned_data_07.plot(kind='bar')
 plt.title('Average rating of accepted applications by week')
